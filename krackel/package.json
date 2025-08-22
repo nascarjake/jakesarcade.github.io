@@ -1,0 +1,16 @@
+{
+  "name": "krackel",
+  "version": "1.0.0",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -s . -p 8000",
+    "serve": "npx serve -s . -p 8000",
+    "dev": "npx serve -s . -p 8000"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "KRACKEL - A pattern-based typing game inspired by Guitar Hero and 90s grunge aesthetics",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

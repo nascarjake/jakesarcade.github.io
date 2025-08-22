@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRACKEL - Pattern Hero</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Bungee&family=Fredoka+One&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Menu Screen -->
+    <div id="menu-screen" class="screen active">
+        <div class="grunge-overlay"></div>
+        
+        <!-- Rock decorations -->
+        <div class="rock-decoration rock-decoration-1">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 5L50 25L70 25L55 40L60 60L40 50L20 60L25 40L10 25L30 25L40 5Z" fill="#660022" stroke="#ff0044" stroke-width="2" opacity="0.6"/>
+            </svg>
+        </div>
+        
+        <div class="rock-decoration rock-decoration-2">
+            <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 30C10 30 20 10 30 30C40 10 50 30 50 30C50 30 40 50 30 30C20 50 10 30 10 30Z" fill="#330011" stroke="#880033" stroke-width="1.5" opacity="0.4"/>
+            </svg>
+        </div>
+        
+        <div class="rock-decoration rock-decoration-3">
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="30" fill="none" stroke="#440022" stroke-width="3" opacity="0.3"/>
+                <path d="M50 20L55 40L70 40L60 50L65 70L50 60L35 70L40 50L30 40L45 40L50 20Z" fill="#220011" stroke="#660033" stroke-width="1" opacity="0.5"/>
+            </svg>
+        </div>
+        
+        <div class="menu-container">
+            <h1 class="game-title">KRACKEL</h1>
+            <p class="game-subtitle">Pattern Hero</p>
+            <div class="menu-buttons">
+                <button class="grunge-button" id="start-game">🔥 ROCK OUT 🔥</button>
+                <button class="grunge-button" id="instructions">🎸 HOW TO SHRED 🎸</button>
+                <button class="grunge-button" id="high-scores">⚡ HALL OF FAME ⚡</button>
+            </div>
+        </div>
+        
+        <!-- Instructions Modal -->
+        <div id="instructions-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🔥 HOW TO SHRED 🔥</h2>
+                <p>Crush falling patterns in the HIT ZONE like a rockstar!</p>
+                <ul>
+                    <li><strong>🎸 GUIDED SHREDS:</strong> Slam patterns that fall down the highway</li>
+                    <li><strong>🤘 FREESTYLE JAMS:</strong> Create your own sick patterns between guided ones</li>
+                    <li><strong>⚡ TIMING IS EVERYTHING:</strong> Hit patterns when they reach the red HIT ZONE</li>
+                    <li><strong>🥁 FEEL THE BEAT:</strong> Listen to the rhythm - it's your lifeline!</li>
+                    <li><strong>🔥 INTENSITY RISING:</strong> Each minute gets more brutal</li>
+                    <li><strong>💀 COMBO CHAOS:</strong> Perfect hits build your score multiplier</li>
+                </ul>
+                <p style="margin-top: 20px; font-size: 0.9rem; color: #999999;">
+                    <strong>🎯 Examples:</strong><br>
+                    • Guided: See "nana" falling → Type it in the HIT ZONE → CRUSHING IT!<br>
+                    • Freestyle: Type "rock" or "metal" repeatedly → BONUS MAYHEM!
+                </p>
+                <button class="grunge-button small" id="close-instructions">🤘 LET'S SHRED! 🤘</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-overlay"></div>
+        <div class="game-container">
+            <div class="game-header">
+                <div class="score-display">
+                    <span class="score-label">SCORE</span>
+                    <span class="score-value" id="current-score">0</span>
+                </div>
+                <div class="combo-display">
+                    <span class="combo-label">COMBO</span>
+                    <span class="combo-value" id="current-combo">x1</span>
+                </div>
+                
+                <!-- BPM info display -->
+                <div class="bpm-display">
+                    <div class="bpm-info" id="bpm-info">120 BPM</div>
+                </div>
+                
+                <div class="time-display">
+                    <span class="time-label">TIME</span>
+                    <span class="time-value" id="time-left">60</span>
+                </div>
+            </div>
+            
+            <div class="typing-area">
+                <!-- Guitar Hero style pattern highway -->
+                <div class="pattern-highway">
+                    <div class="hit-zone">HIT ZONE</div>
+                </div>
+                
+                <!-- Current pattern being typed -->
+                <div class="current-pattern-display">
+                    <div class="pattern-status" id="pattern-status">FREESTYLE</div>
+                    <div class="current-pattern" id="current-pattern-text">Start typing...</div>
+                    <div class="current-song-info" id="current-song-info" style="font-size: 0.8rem; color: #666666; margin-top: 5px;">No song selected</div>
+                </div>
+                
+                <!-- Pattern AI Analysis Panel -->
+                <div class="pattern-ai-panel">
+                    <div class="ai-section">
+                        <h3>🧠 AI Patterns</h3>
+                        <div id="detected-patterns" class="patterns-list"></div>
+                    </div>
+                    
+                    <div class="ai-section">
+                        <h3>🎵 Rhythm</h3>
+                        <div id="rhythm-analysis" class="rhythm-list"></div>
+                    </div>
+                    
+                    <div class="ai-section">
+                        <h3>💡 Suggestions</h3>
+                        <div id="pattern-suggestions" class="suggestions-list"></div>
+                    </div>
+                    
+                    <div class="ai-section">
+                        <h3>👤 Your Style</h3>
+                        <div id="user-style" class="style-info"></div>
+                    </div>
+                </div>
+                
+                <!-- Old typing display (now smaller) -->
+                <div id="typed-text" class="typed-text" style="position: absolute; bottom: 20px; left: 20px; font-size: 1rem; opacity: 0.6;"></div>
+            </div>
+            
+            <div class="score-popup-container" id="score-popups"></div>
+            
+            <div class="pattern-feedback" id="pattern-feedback"></div>
+            
+            <button class="pause-button" id="pause-game">⏸</button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameover-screen" class="screen">
+        <div class="grunge-overlay"></div>
+        
+        <!-- Rock decorations for game over -->
+        <div class="rock-decoration rock-decoration-4">
+            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M60 10L75 45L110 45L85 70L95 105L60 85L25 105L35 70L10 45L45 45L60 10Z" fill="#330011" stroke="#660022" stroke-width="2" opacity="0.4"/>
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#440022" stroke-width="2" opacity="0.3"/>
+            </svg>
+        </div>
+        
+        <div class="gameover-container">
+            <h1 class="gameover-title">🔥 SHRED COMPLETE 🔥</h1>
+            <div class="final-score-container">
+                <span class="final-score-label">FINAL SCORE</span>
+                <span class="final-score-value" id="final-score">0</span>
+            </div>
+            <div class="stats-container">
+                <div class="stat">
+                    <span class="stat-label">Best Combo:</span>
+                    <span class="stat-value" id="best-combo">x1</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Longest Pattern:</span>
+                    <span class="stat-value" id="longest-pattern">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Patterns:</span>
+                    <span class="stat-value" id="total-patterns">0</span>
+                </div>
+            </div>
+            <div class="gameover-buttons">
+                <button class="grunge-button" id="play-again">🔥 ROCK AGAIN 🔥</button>
+                <button class="grunge-button" id="back-to-menu">🎸 BACK TO STAGE 🎸</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Song Selection Screen -->
+    <div id="song-select-screen" class="screen">
+        <div class="grunge-overlay"></div>
+        <div class="song-select-container">
+            <h1 class="song-select-title">🎵 CHOOSE YOUR JAM 🎵</h1>
+            
+            <!-- BPM Selection -->
+            <div class="bpm-selection">
+                <label for="bpm-slider">🥁 TEMPO (BPM): <span id="bpm-display">120</span></label>
+                <input type="range" id="bpm-slider" min="60" max="200" value="120" class="bpm-slider">
+                <div class="bpm-presets">
+                    <button class="bpm-preset" data-bpm="80">🐌 Chill (80)</button>
+                    <button class="bpm-preset" data-bpm="120">🎸 Rock (120)</button>
+                    <button class="bpm-preset" data-bpm="140">⚡ Metal (140)</button>
+                    <button class="bpm-preset" data-bpm="180">🔥 Shred (180)</button>
+                </div>
+            </div>
+            
+            <div class="songs-grid" id="songs-grid">
+                <!-- Songs will be populated by JavaScript -->
+            </div>
+            <div class="song-select-buttons">
+                <button class="grunge-button" id="back-to-main">🎸 BACK TO STAGE 🎸</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="musical-engine.js"></script>
+    <script src="pattern-ai-engine.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
