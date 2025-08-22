@@ -94,7 +94,7 @@ class DishSystem {
         });
         
         this.cookingStations.set('stove', {
-            name: 'Stove Station',
+            name: 'Stove/Oven Station',
             allowedActions: ['boil', 'bake'],
             color: '#6f42c1',
             cookingSlots: 4
@@ -474,8 +474,14 @@ class DishSystem {
             if (currentFinalStep && currentFinalStep.action === toolId) {
                 dish.finalStepsProgress++;
                 
+                // Only mark dish as complete if we've finished all steps AND the last step doesn't require cooking
                 if (dish.finalStepsProgress >= dish.finalSteps.length) {
-                    dish.isComplete = true;
+                    const lastStep = dish.finalSteps[dish.finalSteps.length - 1];
+                    // Mark complete only if last step doesn't require a cooking station
+                    if (!lastStep.station || lastStep.station === 'prep') {
+                        dish.isComplete = true;
+                    }
+                    // If last step requires cooking, dish stays incomplete until retrieved
                 }
                 
                 toolUsed = true;

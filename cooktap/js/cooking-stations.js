@@ -12,6 +12,12 @@ class CookingStation {
         this.currentItems = new Map(); // Map of slot index to cooking item
         this.isActive = false;
         this.element = document.getElementById(`${id}-station`);
+        
+        // Cleanliness system (only for cooking stations, not prep)
+        this.maxCleanliness = 25;
+        this.currentCleanliness = this.id === 'prep' ? null : this.maxCleanliness;
+        this.isBeingCleaned = false;
+        this.cleaningTimer = null;
     }
 
     // Add item to cooking station
@@ -43,7 +49,48 @@ class CookingStation {
         const item = this.currentItems.get(slotIndex);
         this.currentItems.delete(slotIndex);
         this.updateSlotDisplay(slotIndex);
+        
+        // Decrease cleanliness when item is removed (cooking is done)
+        if (this.currentCleanliness !== null && this.currentCleanliness > 0) {
+            this.currentCleanliness--;
+            console.log(`${this.name} cleanliness decreased to ${this.currentCleanliness}/${this.maxCleanliness}`);
+        }
+        
         return item;
+    }
+    
+    // Start cleaning the station (5-second process)
+    startCleaning() {
+        console.log(`Attempting to clean ${this.name}. Current cleanliness: ${this.currentCleanliness}, isBeingCleaned: ${this.isBeingCleaned}`);
+        
+        if (this.currentCleanliness === null || this.isBeingCleaned) {
+            console.log(`Cannot clean - cleanliness is null: ${this.currentCleanliness === null}, already being cleaned: ${this.isBeingCleaned}`);
+            return false;
+        }
+        
+        this.isBeingCleaned = true;
+        console.log(`Started cleaning ${this.name}...`);
+        
+        this.cleaningTimer = setTimeout(() => {
+            this.currentCleanliness = this.maxCleanliness;
+            this.isBeingCleaned = false;
+            this.cleaningTimer = null;
+            console.log(`${this.name} is now fully clean!`);
+            
+            // Trigger display update by dispatching a custom event
+            if (this.element) {
+                this.element.dispatchEvent(new CustomEvent('cleaningComplete', { detail: { stationId: this.id } }));
+            }
+        }, 5000);
+        
+        return true;
+    }
+    
+    // Check if station can be cleaned
+    canBeCleaned() {
+        return this.currentCleanliness !== null && 
+               this.currentCleanliness < this.maxCleanliness && 
+               !this.isBeingCleaned;
     }
 
     // Check if station has available slots
@@ -156,6 +203,11 @@ class CookingStationManager {
             const station = new CookingStation(stationId, config);
             this.stations.set(stationId, station);
             station.initializeDisplay();
+            
+            // Initialize cleanliness display for cooking stations
+            if (station.currentCleanliness !== null) {
+                this.updateStationCleanliness(station);
+            }
         }
     }
 
@@ -209,9 +261,23 @@ class CookingStationManager {
                     <div class="dish-progress">Final: ${dish.finalStepsProgress}/${dish.finalSteps?.length || 0} steps</div>
                 `;
             } else {
+                // Show cleanliness status for cooking stations
+                const station = this.stations.get(stationId);
+                let statusHtml = `<div class="station-status">Cooking in progress...</div>`;
+                
+                if (station && station.currentCleanliness !== null) {
+                    if (station.isBeingCleaned) {
+                        statusHtml = `<div class="station-status cleaning">🧽 Cleaning...</div>`;
+                    } else {
+                        const cleanlinessClass = station.currentCleanliness < 10 ? 'low-cleanliness' : 
+                                               station.currentCleanliness < 20 ? 'medium-cleanliness' : 'high-cleanliness';
+                        statusHtml = `<div class="station-status ${cleanlinessClass}">🧽 ${station.currentCleanliness}/${station.maxCleanliness} Cleanliness</div>`;
+                    }
+                }
+                
                 dishDisplay.innerHTML = `
                     <div class="dish-name" style="background-color: ${dish.baseColor}">${dish.name}</div>
-                    <div class="station-status">Cooking in progress...</div>
+                    ${statusHtml}
                 `;
             }
             dishDisplay.classList.add('active');
@@ -317,21 +383,36 @@ class CookingStationManager {
                 return false;
             }
 
-            // Find cooking time from ingredient prep steps
+            // Find cooking time from ingredient prep steps OR final steps
             let cookingTime = 3000; // default
+            let itemName = ingredient;
+            let isIngredient = true;
+            
+            // First try to find in ingredient prep steps
             const ingredientConfig = dish.ingredients.find(ing => ing.id === ingredient);
             if (ingredientConfig && ingredientConfig.prepSteps) {
                 const step = ingredientConfig.prepSteps.find(s => s.action === action);
                 if (step && step.time) {
                     cookingTime = step.time;
                 }
+                const ingredientData = this.dishSystem.getIngredient(ingredient);
+                itemName = ingredientData ? ingredientData.name : ingredient;
+            } else {
+                // If not found in ingredients, check final steps (like baking pizza)
+                if (dish.finalSteps) {
+                    const finalStep = dish.finalSteps.find(s => s.action === action);
+                    if (finalStep && finalStep.time) {
+                        cookingTime = finalStep.time;
+                        itemName = dish.name; // Use dish name for final steps
+                        isIngredient = false;
+                    }
+                }
             }
 
-            const ingredientData = this.dishSystem.getIngredient(ingredient);
             const cookingItem = {
-                name: ingredientData ? ingredientData.name : ingredient,
+                name: itemName,
                 action: action,
-                ingredient: ingredient,
+                ingredient: isIngredient ? ingredient : null,
                 cookingTime: cookingTime
             };
 
@@ -406,6 +487,64 @@ class CookingStationManager {
         
         this.activeStation = null;
         this.currentDish = null;
+    }
+    
+    // Clean the current active station
+    cleanCurrentStation() {
+        console.log(`Attempting to clean current station. Active station: ${this.activeStation?.name || 'none'}`);
+        
+        if (!this.activeStation) {
+            console.log('No active station to clean');
+            return false;
+        }
+        
+        console.log(`Active station: ${this.activeStation.name}, can be cleaned: ${this.activeStation.canBeCleaned()}`);
+        
+        const success = this.activeStation.startCleaning();
+        
+        // Update display during cleaning (always update, even without current dish)
+        if (success) {
+            console.log('Cleaning started, updating display...');
+            this.updateStationCleanliness(this.activeStation);
+        } else {
+            console.log('Cleaning failed to start');
+        }
+        
+        return success;
+    }
+    
+    // Update station cleanliness display
+    updateStationCleanliness(station) {
+        if (!station || !station.element) return;
+        
+        const dishDisplay = station.element.querySelector('.current-dish');
+        if (!dishDisplay) return;
+        
+        // Show cleanliness status for cooking stations
+        if (station.currentCleanliness !== null) {
+            let statusHtml = '';
+            
+            if (station.isBeingCleaned) {
+                statusHtml = `<div class="station-status cleaning">🧽 Cleaning...</div>`;
+            } else {
+                const cleanlinessClass = station.currentCleanliness < 10 ? 'low-cleanliness' : 
+                                       station.currentCleanliness < 20 ? 'medium-cleanliness' : 'high-cleanliness';
+                statusHtml = `<div class="station-status ${cleanlinessClass}">🧽 ${station.currentCleanliness}/${station.maxCleanliness} Cleanliness</div>`;
+            }
+            
+            dishDisplay.innerHTML = `
+                <div class="dish-placeholder">${station.name}</div>
+                ${statusHtml}
+            `;
+            dishDisplay.classList.remove('active'); // Remove active styling when no dish
+        }
+    }
+    
+    // Check if current station can be cleaned
+    canCleanCurrentStation() {
+        if (!this.activeStation) return false;
+        
+        return this.activeStation.canBeCleaned();
     }
 }
 

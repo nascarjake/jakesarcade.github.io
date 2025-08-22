@@ -58,7 +58,7 @@ class InputHandler {
             'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
             'z', 'x', 'c', 'v', 'b', 'n', 'm',
             '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-            ' ', 'Escape', 'Enter', ',', '.', ';', "'", '[', ']'
+            ' ', 'Escape', 'Enter', 'Delete', 'Backspace', ',', '.', ';', "'", '[', ']'
         ];
         return gameKeys.includes(key.toLowerCase()) || gameKeys.includes(key);
     }
@@ -84,6 +84,12 @@ class InputHandler {
 
         if (key === 'enter') {
             this.game.retrieveCookedItems();
+            return;
+        }
+        
+        // Handle cleaning (both Delete and Backspace for Mac compatibility)
+        if (key === 'delete' || key === 'backspace') {
+            this.game.cleanStation();
             return;
         }
 

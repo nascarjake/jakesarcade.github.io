@@ -14,7 +14,33 @@ class CookTapGame {
         this.gameTimer = null;
         
         this.setupUI();
+        this.setupCleaningEventListeners();
         this.initializeGame();
+    }
+    
+    setupCleaningEventListeners() {
+        // Listen for cleaning complete events from all stations
+        const stations = ['grill', 'fryer', 'stove'];
+        stations.forEach(stationId => {
+            const stationElement = document.getElementById(`${stationId}-station`);
+            if (stationElement) {
+                stationElement.addEventListener('cleaningComplete', (event) => {
+                    console.log(`Cleaning completed for ${event.detail.stationId}`);
+                    // Update display if this station is currently active
+                    if (this.cookingStationManager.activeStation && 
+                        this.cookingStationManager.activeStation.id === event.detail.stationId) {
+                        
+                        // Update cleanliness display regardless of whether there's a dish
+                        this.cookingStationManager.updateStationCleanliness(this.cookingStationManager.activeStation);
+                        
+                        // Also update dish display if there's a current dish
+                        if (this.cookingStationManager.currentDish) {
+                            this.cookingStationManager.updateStationDisplay(event.detail.stationId, this.cookingStationManager.currentDish);
+                        }
+                    }
+                });
+            }
+        });
     }
 
     setupUI() {
@@ -361,6 +387,8 @@ class CookTapGame {
             
             // Handle cooking actions that require station switches
             // Check if this tool triggers a cooking station action
+            
+            // First check ingredient prep steps
             for (const ingredient of dish.ingredients) {
                 if (!dish.currentIngredients.has(ingredient.id)) continue;
 
@@ -381,8 +409,25 @@ class CookTapGame {
                         );
 
                         console.log(`Started cooking: ${toolId} on ${completedStep.station} station`);
-                        break;
+                        return success; // Exit early since we switched stations
                     }
+                }
+            }
+            
+            // Then check final steps (for things like baking pizza)
+            if (dish.finalSteps && dish.finalStepsProgress < dish.finalSteps.length) {
+                const currentFinalStep = dish.finalSteps[dish.finalStepsProgress - 1]; // We just completed this step
+                
+                if (currentFinalStep && currentFinalStep.action === toolId && currentFinalStep.station && currentFinalStep.station !== 'prep') {
+                    // Switch to cooking station and start cooking
+                    this.cookingStationManager.setActiveDish(dishId, currentFinalStep.station);
+
+                    this.cookingStationManager.handleCookingAction(
+                        toolId,
+                        dishId // Use dishId instead of ingredient for final steps
+                    );
+
+                    console.log(`Started cooking final step: ${toolId} on ${currentFinalStep.station} station`);
                 }
             }
         } else {
@@ -488,12 +533,19 @@ class CookTapGame {
                 retrieved++;
                 console.log(`Retrieved ${item.name} from ${stationId} station`);
                 
-                // Mark the ingredient as ready in the dish
+                // Mark the ingredient as ready in the dish, OR mark dish as complete for final steps
                 if (item.ingredient) {
+                    // This is an ingredient that was cooking (like pasta, chicken)
                     const ingredientState = dish.ingredientStates.get(item.ingredient);
                     if (ingredientState) {
                         ingredientState.isReady = true;
                         console.log(`Marked ingredient ${item.ingredient} as ready`);
+                    }
+                } else if (item.name === dish.name || item.action) {
+                    // This is a final step cooking (like baking pizza)
+                    if (dish.finalSteps && dish.finalStepsProgress === dish.finalSteps.length) {
+                        dish.isComplete = true;
+                        console.log(`Marked dish ${dish.name} as complete after retrieving from cooking`);
                     }
                 }
             }
@@ -515,6 +567,21 @@ class CookTapGame {
         }
         
         return retrieved > 0;
+    }
+    
+    // Clean current station
+    cleanStation() {
+        const success = this.cookingStationManager.cleanCurrentStation();
+        
+        if (success) {
+            this.inputHandler.showKeyFeedback('Clean', true);
+            console.log('Started cleaning station...');
+        } else {
+            this.inputHandler.showKeyFeedback('Clean', false);
+            console.log('Cannot clean station');
+        }
+        
+        return success;
     }
 
     // Update help display

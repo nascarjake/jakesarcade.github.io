@@ -297,6 +297,30 @@ body {
     margin-top: 0.2rem;
 }
 
+/* Cleanliness status styling */
+.station-status.cleaning {
+    color: #007bff;
+    animation: pulse 2s infinite;
+}
+
+.station-status.high-cleanliness {
+    color: #28a745;
+}
+
+.station-status.medium-cleanliness {
+    color: #ffc107;
+}
+
+.station-status.low-cleanliness {
+    color: #dc3545;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 @keyframes ready-pulse {
     0% { box-shadow: 0 0 5px rgba(40, 167, 69, 0.5); }
     50% { box-shadow: 0 0 15px rgba(40, 167, 69, 0.8); }

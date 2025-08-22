@@ -272,6 +272,9 @@ class OrderSystem {
         this.completedOrders.push(order);
         this.activeOrders.delete(orderId);
         
+        // Deduct points for failed order
+        this.totalScore -= 20;
+        
         // Remove from DOM with expired styling
         if (order.element) {
             order.element.classList.add('expired');
