@@ -10,13 +10,61 @@ class DishSystem {
         this.tools = new Map();
         this.cookingStations = new Map();
         
-        this.initializeIngredients();
-        this.initializeTools();
-        this.initializeCookingStations();
-        this.initializeDishes();
+        this.menuConfig = null;
+        this.loadConfiguration();
     }
 
-    initializeIngredients() {
+    async loadConfiguration() {
+        try {
+            const response = await fetch('./config/menu.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.menuConfig = await response.json();
+            
+            this.initializeFromConfig();
+            console.log('Menu configuration loaded successfully');
+        } catch (error) {
+            console.error('Failed to load menu configuration:', error);
+            // Fallback to hardcoded data if needed
+            this.initializeFallback();
+        }
+    }
+
+    initializeFromConfig() {
+        if (!this.menuConfig) return;
+        
+        // Load ingredients
+        this.menuConfig.ingredients.forEach(ingredient => {
+            this.addIngredient(ingredient.id, ingredient.name, ingredient.category, ingredient.baseColor, ingredient.key);
+        });
+        
+        // Load tools
+        this.menuConfig.tools.forEach(tool => {
+            this.addTool(tool.id, tool.name, tool.category, tool.baseColor, tool.key);
+        });
+        
+        // Load cooking stations
+        for (const [stationId, config] of Object.entries(this.menuConfig.cookingStations)) {
+            this.cookingStations.set(stationId, config);
+        }
+        
+        // Load dishes
+        this.menuConfig.dishes.forEach(dish => {
+            this.addDish(dish.id, dish);
+        });
+    }
+    
+    initializeFallback() {
+        console.warn('Using fallback hardcoded menu data');
+        // Keep original hardcoded initialization as backup
+        this.initializeIngredientsHardcoded();
+        this.initializeToolsHardcoded();
+        this.initializeCookingStationsHardcoded();
+        this.initializeDishesHardcoded();
+    }
+
+    initializeIngredientsHardcoded() {
         // Meat ingredients
         this.addIngredient('beef_patty', 'Beef Patty', 'meat', '#ffcccb', 'b');
         this.addIngredient('chicken_breast', 'Chicken Breast', 'meat', '#ffcccb', 'c');
@@ -52,7 +100,7 @@ class DishSystem {
         this.addIngredient('oregano', 'Oregano', 'seasoning', '#dda0dd', 'g');
     }
 
-    initializeTools() {
+    initializeToolsHardcoded() {
         // Cutting tools
         this.addTool('chop', 'Chop', 'cut', '#c0c0c0', 'x');
         this.addTool('slice', 'Slice', 'cut', '#c0c0c0', 'v');
@@ -72,7 +120,7 @@ class DishSystem {
         this.addTool('plate', 'Plate', 'serve', '#98fb98', 'space');
     }
 
-    initializeCookingStations() {
+    initializeCookingStationsHardcoded() {
         this.cookingStations.set('prep', {
             name: 'Prep Station',
             allowedActions: ['chop', 'slice', 'mix', 'toss', 'assemble', 'plate'],
@@ -101,7 +149,7 @@ class DishSystem {
         });
     }
 
-    initializeDishes() {
+    initializeDishesHardcoded() {
         // Classic Burger
         this.addDish('classic_burger', {
             name: 'Classic Burger',

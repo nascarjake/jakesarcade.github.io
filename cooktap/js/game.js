@@ -5,9 +5,6 @@
 class CookTapGame {
     constructor() {
         this.dishSystem = window.dishSystem;
-        this.cookingStationManager = new CookingStationManager(this.dishSystem);
-        this.orderSystem = new OrderSystem(this.dishSystem);
-        this.inputHandler = new InputHandler(this);
         
         this.isRunning = false;
         this.gameTime = 0;
@@ -16,6 +13,22 @@ class CookTapGame {
         this.setupUI();
         this.setupCleaningEventListeners();
         this.initializeGame();
+    }
+    
+    async waitForDishSystem() {
+        // Wait for dish system to load configuration
+        let attempts = 0;
+        while ((!this.dishSystem.ingredients.size || !this.dishSystem.dishes.size) && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (attempts >= 50) {
+            console.error('Dish system failed to load within timeout');
+            return false;
+        }
+        
+        return true;
     }
     
     setupCleaningEventListeners() {
@@ -64,6 +77,12 @@ class CookTapGame {
     }
 
     addGameControls() {
+        // Check if controls already exist to prevent duplicates
+        if (document.querySelector('.game-controls')) {
+            console.log('Game controls already exist, skipping creation');
+            return;
+        }
+        
         const header = document.querySelector('.game-header .stats');
         if (header) {
             const controls = document.createElement('div');
@@ -87,6 +106,8 @@ class CookTapGame {
             document.getElementById('reset-game-btn').addEventListener('click', () => {
                 this.resetGame();
             });
+            
+            console.log('Game controls created successfully');
         }
 
         // Add CSS for buttons
@@ -229,7 +250,21 @@ class CookTapGame {
         document.head.appendChild(style);
     }
 
-    initializeGame() {
+    async initializeGame() {
+        console.log('Initializing Cook Tap Game...');
+        
+        // Wait for dish system to load
+        const loaded = await this.waitForDishSystem();
+        if (!loaded) {
+            console.error('Failed to initialize game - dish system not loaded');
+            return;
+        }
+        
+        // Initialize other systems after dish system is ready
+        this.cookingStationManager = new CookingStationManager(this.dishSystem);
+        this.orderSystem = new OrderSystem(this.dishSystem);
+        this.inputHandler = new InputHandler(this);
+        
         // Initialize cooking stations display
         this.cookingStationManager.initializeStations();
         
@@ -240,8 +275,23 @@ class CookTapGame {
         console.log('Available dishes:', this.dishSystem.getAllDishes().map(d => d.name));
     }
 
-    startGame() {
+    async start() {
+        return this.startGame();
+    }
+    
+    async startGame() {
         if (this.isRunning) return;
+        
+        // Ensure game is properly initialized
+        if (!this.orderSystem) {
+            console.log('Game not ready yet, initializing...');
+            await this.initializeGame();
+        }
+        
+        if (!this.orderSystem) {
+            console.error('Cannot start game - initialization failed');
+            return;
+        }
         
         this.isRunning = true;
         this.gameTime = 0;

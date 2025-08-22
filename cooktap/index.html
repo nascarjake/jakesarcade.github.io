@@ -116,5 +116,26 @@
     <script src="js/order-system.js"></script>
     <script src="js/input-handler.js"></script>
     <script src="js/game.js"></script>
+    
+    <script>
+        // Initialize game when page loads
+        window.dishSystem = new DishSystem();
+        
+        // Initialize game after dish system loads
+        const initializeGame = async () => {
+            const cookTap = new CookTapGame();
+            // Make cookTap available globally
+            window.cookTap = cookTap;
+            
+            // Auto-start the game after initialization
+            setTimeout(async () => {
+                if (cookTap.start) {
+                    await cookTap.start();
+                }
+            }, 500);
+        };
+        
+        initializeGame();
+    </script>
 </body>
 </html>
