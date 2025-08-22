@@ -363,22 +363,23 @@ class CookTapGame {
             // Check if this tool triggers a cooking station action
             for (const ingredient of dish.ingredients) {
                 if (!dish.currentIngredients.has(ingredient.id)) continue;
-                
+
                 const ingredientState = dish.ingredientStates.get(ingredient.id);
                 if (!ingredientState || ingredientState.isReady) continue;
-                
+
                 // Check if we just completed a prep step that requires a cooking station
                 if (ingredient.prepSteps && ingredient.prepSteps.length > ingredientState.prepStepsCompleted - 1) {
                     const completedStep = ingredient.prepSteps[ingredientState.prepStepsCompleted - 1];
+                    
                     if (completedStep && completedStep.action === toolId && completedStep.station && completedStep.station !== 'prep') {
                         // Switch to cooking station and start cooking
                         this.cookingStationManager.setActiveDish(dishId, completedStep.station);
-                        
+
                         this.cookingStationManager.handleCookingAction(
                             toolId,
                             ingredient.id
                         );
-                        
+
                         console.log(`Started cooking: ${toolId} on ${completedStep.station} station`);
                         break;
                     }
@@ -506,7 +507,10 @@ class CookTapGame {
             this.cookingStationManager.setActiveDish(activeOrder.dishId, 'prep');
             
             // Update displays
-            this.cookingStationManager.updateAllStationDisplays();
+            const currentStation = this.cookingStationManager.activeStation;
+            if (currentStation) {
+                this.cookingStationManager.updateStationDisplay(currentStation.id, activeOrder.dishId);
+            }
             this.updateHelpDisplay();
         }
         

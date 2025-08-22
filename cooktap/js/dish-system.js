@@ -453,8 +453,14 @@ class DishSystem {
             if (currentPrepStep && currentPrepStep.action === toolId) {
                 ingredientState.prepStepsCompleted++;
                 
+                // Only mark as ready if all prep steps are done AND the last step doesn't require cooking
                 if (ingredientState.prepStepsCompleted >= ingredient.prepSteps.length) {
-                    ingredientState.isReady = true;
+                    const lastStep = ingredient.prepSteps[ingredient.prepSteps.length - 1];
+                    // Mark ready only if last step doesn't require a cooking station
+                    if (!lastStep.station || lastStep.station === 'prep') {
+                        ingredientState.isReady = true;
+                    }
+                    // If last step requires cooking station, ingredient stays not ready until retrieved
                 }
                 
                 toolUsed = true;
